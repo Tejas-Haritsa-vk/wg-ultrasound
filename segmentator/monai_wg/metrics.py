@@ -73,7 +73,12 @@ class MonaiMetricWrapper:
         
         # Discretize if needed (assuming probabilities/logits)
         if discretize:
-            y_pred = (y_pred >= 0.5).float() # Simple threshold for handling mult-channel one-hot/binary
+            if self.num_classes <= 2:
+                y_pred = (y_pred >= 0.5).float()
+            else:
+                # For multi-class, use argmax then re-convert to one-hot
+                from monai.networks.utils import one_hot
+                y_pred = one_hot(y_pred.argmax(dim=1, keepdim=True), num_classes=self.num_classes)
 
         # Update metrics
         self.dice_metric(y_pred=y_pred, y=y)
